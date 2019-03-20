@@ -1,0 +1,15 @@
+{
+  "name": "pixelboard",
+  "version": "1.0.0",
+  "description": "LBRY Pixel Board",
+  "main": "index.js",
+  "scripts": {
+	"package": "node ./package.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "lbry-format": "https://github.com/lbryio/lbry-format.git"
+  }
+}

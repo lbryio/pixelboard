@@ -1,3 +1,6 @@
+pixelboard/
+*.lbry
+
 # Logs
 logs
 *.log

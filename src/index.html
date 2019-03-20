@@ -1,0 +1,99 @@
+<!DOCTYPE>
+<html>
+<head>
+<title>Pixel Board</title>
+<style>
+body {
+	background: #333;
+	color: #eee;
+	font-family: arial;
+}
+</style>
+</head>
+<body>
+<h2>Claim a Pixel!</h2>
+<script>
+const nameToPointExp = /\-(\d+)x(\d+)$/;
+const claimDatas = [];
+
+async function getBlock(size = 32, startX = 0, startY = 0) {
+	const claimNames = Array.from({length: size}, (x, i) => i).reduce((result, x)=>{
+		return result.concat(Array.from({length: size}, (x, i) => i).map((y)=>{
+			return `pixelboard-${startX + x}x${startY + y}`;
+		}));
+	}, []);
+	
+	const blockQuery = `SELECT title, name, description FROM claim WHERE name IN (${claimNames.map((claimName)=>`'${claimName}'`)})`
+	const apiBase = `https://chainquery.lbry.com/api/sql?query=`
+	const apiRequest = `${apiBase}${encodeURI(blockQuery)}`;
+
+	const request = await fetch(apiRequest);
+	const { data: result } = await request.json();
+	 
+	console.log(result);
+	return result.map((claim) => {
+		const [match, x, y] = nameToPointExp.exec(claim.name);
+		const color = `#${claim.title.substring(1, 7)}`;
+			
+		if(!claimDatas[x]) {
+			claimDatas[x] = [];
+		}
+		claimDatas[x][y] = claim;
+		
+		return [x, y, color, claim.description];
+	})
+}
+
+const pixelDimensions = 64;
+const hardScale = 7;
+
+const canvas = document.createElement('canvas');
+canvas.width = canvas.height = pixelDimensions * hardScale;
+const ctx = canvas.getContext('2d');
+ctx.fillRect(0, 0, pixelDimensions * hardScale, pixelDimensions * hardScale);
+
+
+getBlock(pixelDimensions).then((result) => {
+	for(let i = 0; i < result.length; i++) {
+		const [
+			x, y, color, description
+		] = result[i];
+		ctx.fillStyle = color;
+		ctx.fillRect(x * hardScale, y * hardScale, 1 * hardScale, 1 * hardScale);
+	}
+	
+	/*
+	console.log(
+		'%c ',
+		`background: url(${canvas.toDataURL()}); width: ${pixelDimensions}px; height: ${pixelDimensions}px; line-height: 0; padding: ${pixelDimensions / 2}px`
+	);
+	*/
+	const hoverDetails = document.createElement('div');
+	const img = new Image();
+	img.src = canvas.toDataURL();
+	
+	document.body.appendChild(img);
+	document.body.appendChild(hoverDetails);
+	
+	var {
+		offsetLeft,
+		offsetTop,
+	} = img;
+	
+	img.onmousemove = (e) => {
+		let x = Math.floor((e.pageX - offsetLeft) / hardScale);
+		let y = Math.floor((e.pageY - offsetTop) / hardScale)
+		try {
+			const claimData = claimDatas[x][y] || false;
+			if(claimData === false) {
+				throw false;
+			}
+			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
+		} catch(e) {
+			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
+		}
+	}
+})
+</script>
+</body>
+</html>
