@@ -29,8 +29,7 @@ async function getBlock(size = 32, startX = 0, startY = 0) {
 
 	const request = await fetch(apiRequest);
 	const { data: result } = await request.json();
-	 
-	console.log(result);
+
 	return result.map((claim) => {
 		const [match, x, y] = nameToPointExp.exec(claim.name);
 		const color = `#${claim.title.substring(1, 7)}`;
@@ -93,7 +92,7 @@ getBlock(pixelDimensions).then((result) => {
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
 		}
 	}
-})
+});
 </script>
 </body>
 </html>
