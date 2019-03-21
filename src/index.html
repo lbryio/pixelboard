@@ -87,7 +87,7 @@ getBlock(pixelDimensions).then((result) => {
 			if(claimData === false) {
 				throw false;
 			}
-			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${claimData.effective_amount * .00000001} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
+			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${claimData.effective_amount * .0000001} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
 		} catch(e) {
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
 		}
