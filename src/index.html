@@ -87,7 +87,11 @@ getBlock(pixelDimensions).then((result) => {
 			if(claimData === false) {
 				throw false;
 			}
-			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${claimData.effective_amount * .0000001} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
+			let effective_amount = claimData.effective_amount.toString();
+			const fraction_amount = effective_amount.substr(-8);
+			effective_amount = effective_amount.substr(0, effective_amount.length - 8) + '.' + effective_amount.substr(-8).replace(/0*$/, '')
+			
+			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${effective_amount} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
 		} catch(e) {
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
 		}
