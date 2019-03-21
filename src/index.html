@@ -23,7 +23,7 @@ async function getBlock(size = 32, startX = 0, startY = 0) {
 		}));
 	}, []);
 	
-	const blockQuery = `SELECT title, name, description FROM claim WHERE name IN (${claimNames.map((claimName)=>`'${claimName}'`)})`
+	const blockQuery = `SELECT title, name, description, effective_amount FROM claim WHERE name IN (${claimNames.map((claimName)=>`'${claimName}'`)})`
 	const apiBase = `https://chainquery.lbry.com/api/sql?query=`
 	const apiRequest = `${apiBase}${encodeURI(blockQuery)}`;
 
@@ -87,7 +87,7 @@ getBlock(pixelDimensions).then((result) => {
 			if(claimData === false) {
 				throw false;
 			}
-			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
+			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${claimData.effective_amount * .00000001} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
 		} catch(e) {
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
 		}
