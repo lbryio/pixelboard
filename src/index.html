@@ -12,9 +12,35 @@ body {
 </head>
 <body>
 <h2>Claim a Pixel!</h2>
+<div id="controls"></div>
 <script>
+let sql_filters = 'TRUE';
 const nameToPointExp = /\-(\d+)x(\d+)$/;
 const claimDatas = [];
+
+const canvas = document.createElement('canvas');
+const hoverDetails = document.createElement('div');
+const img = new Image();
+
+const logger = document.createElement('div');
+Object.assign(logger.style, {
+	background: '#ddd',
+	color: '#333',
+	padding: '5px',
+	border: '2px solid #333',
+	position: 'absolute',
+	right: 0,
+	top: 0,
+	width: '400px',
+});
+
+img.ondragstart = (e) => {
+	e.preventDefault();
+};
+
+document.body.appendChild(img);
+document.body.appendChild(logger);
+document.body.appendChild(hoverDetails);
 
 async function getBlock(size = 32, startX = 0, startY = 0) {
 	const claimNames = Array.from({length: size}, (x, i) => i).reduce((result, x)=>{
@@ -23,7 +49,7 @@ async function getBlock(size = 32, startX = 0, startY = 0) {
 		}));
 	}, []);
 	
-	const blockQuery = `SELECT title, name, description, effective_amount FROM claim WHERE name IN (${claimNames.map((claimName)=>`'${claimName}'`)})`
+	const blockQuery = `SELECT title, name, description, effective_amount FROM claim WHERE ${sql_filters} AND name IN (${claimNames.map((claimName)=>`'${claimName}'`)})`
 	const apiBase = `https://chainquery.lbry.com/api/sql?query=`
 	const apiRequest = `${apiBase}${encodeURI(blockQuery)}`;
 
@@ -46,13 +72,11 @@ async function getBlock(size = 32, startX = 0, startY = 0) {
 const pixelDimensions = 64;
 const hardScale = 7;
 
-const canvas = document.createElement('canvas');
 canvas.width = canvas.height = pixelDimensions * hardScale;
 const ctx = canvas.getContext('2d');
 ctx.fillRect(0, 0, pixelDimensions * hardScale, pixelDimensions * hardScale);
 
-
-getBlock(pixelDimensions).then((result) => {
+const processResult = (result) => {
 	for(let i = 0; i < result.length; i++) {
 		const [
 			x, y, color, description
@@ -67,12 +91,29 @@ getBlock(pixelDimensions).then((result) => {
 		`background: url(${canvas.toDataURL()}); width: ${pixelDimensions}px; height: ${pixelDimensions}px; line-height: 0; padding: ${pixelDimensions / 2}px`
 	);
 	*/
-	const hoverDetails = document.createElement('div');
-	const img = new Image();
 	img.src = canvas.toDataURL();
 	
-	document.body.appendChild(img);
-	document.body.appendChild(hoverDetails);
+	
+	let clickData = false;
+	let hoverData = false;
+	
+	img.onclick = () => {
+		const loggerDetails = document.createElement('div');
+		loggerDetails.innerText = clickData;
+		logger.appendChild(loggerDetails);
+		
+		const {
+			x,
+			y,
+			claimData,
+		} = hoverData;
+		
+		ctx.fillStyle = '#ddd';
+		ctx.fillRect(x * hardScale, y * hardScale, 1 * hardScale, 1 * hardScale);
+		ctx.fillStyle = '#333';
+		ctx.fillRect((x * hardScale) + 1, (y * hardScale + 1), (1 * hardScale) - 2, (1 * hardScale) - 2);
+		img.src = canvas.toDataURL();
+	};
 	
 	var {
 		offsetLeft,
@@ -92,11 +133,145 @@ getBlock(pixelDimensions).then((result) => {
 			effective_amount = effective_amount.substr(0, effective_amount.length - 8) + '.' + effective_amount.substr(-8).replace(/0*$/, '')
 			
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nBid: ${effective_amount} LBC\nTitle: ${claimData.title}\nDescription: ${claimData.description}`;
+			clickData = `'pixelboard-${x}x${y}', `;
+			hoverData = {
+				x,
+				y,
+				claimData,
+			};
 		} catch(e) {
 			hoverDetails.innerText = `Claim Name: pixelboard-${x}x${y}\nUnclaimed`;
+			clickData = `'pixelboard-${x}x${y}', `;
+			hoverData = {
+				x,
+				y,
+				claimData: false,
+			};
 		}
 	}
-});
+};
+
+getBlock(pixelDimensions).then(processResult);
+
+const toggleContainer = document.createElement('label');
+toggleContainer.innerText = 'Show Controlling';
+const controllingToggle = document.createElement('input');
+controllingToggle.type = 'checkbox';
+toggleContainer.prepend(controllingToggle)
+
+controllingToggle.onclick = (e) => {
+	sql_filters = controllingToggle.checked ? `bid_state = 'CONTROLLING'` : 'TRUE';
+	getBlock(pixelDimensions).then(processResult);
+};
+
+document.getElementById('controls').appendChild(toggleContainer);
+
+// bid_state = 'CONTROLLING'
+
+/*
+// INGORE BELOW UNLESS YOU FOUND IT AND WANT TO USE IT
+// Please check what it does before you uncomment.
+
+var rgbToHex = function (rgb) { 
+  var hex = Number(rgb).toString(16);
+  if (hex.length < 2) {
+       hex = "0" + hex;
+  }
+  return hex;
+};
+
+var fullColorHex = function(r,g,b) {   
+  var red = rgbToHex(r);
+  var green = rgbToHex(g);
+  var blue = rgbToHex(b);
+  return red+green+blue;
+};
+
+const pixels = [];
+
+const width = 19;
+const height = 24;
+drawing = new Image(width, 24);
+drawing.src = "./frozentom.png";
+drawing.onload = function() {
+	const canvas = document.createElement('canvas');
+	const ctx = canvas.getContext('2d');
+	canvas.width = width;
+	canvas.height = height;
+	ctx.drawImage(drawing, 0, 0, width, height);
+	const uint8arr = ctx.getImageData(0, 0, width, height).data;
+	
+	for(let i = 0; i < uint8arr.length; i += 4) {
+		const pixelIndex = i / 4;
+		const x = pixelIndex % width;
+		const y = (pixelIndex - x) / width;
+		
+		const p_r = uint8arr[i];
+		const p_g = uint8arr[i + 1];
+		const p_b = uint8arr[i + 2];
+		const p_a = uint8arr[i + 3];
+		
+		pixels.push({
+			width,
+			i: pixelIndex,
+			x: 63 - width + x,
+			y: 64 - height + y,
+			rgb: '#' + fullColorHex(p_r, p_g, p_b)
+		})
+		
+		
+		
+		
+	}
+	
+	for(let i = 0; i < 380; i++) {
+		pixels.pop()
+	}
+	console.log(pixels)
+		
+	
+	setInterval(() => {
+	if(pixels.length === 0) 
+	return;
+		const pixel = pixels.pop();
+		
+		console.log('Making', pixel);
+		canvas.toBlob((blob) => {
+			const form = new FormData();
+			const file = new File([blob], `frozentom.png`, {
+				type: 'image/png',
+			});
+			
+				
+			form.append('file', file);
+
+
+			form.append('name', `pixelboard-${pixel.x}x${pixel.y}`);
+			form.append('title', pixel.rgb);
+			form.append('description', 'FROZENTOM');
+			form.append('license', '');
+			form.append('licenseUrl', '');
+			form.append('nsfw', 'false');
+			form.append('type', 'image/png');
+
+			fetch('https://dev2.spee.ch/api/claim/publish', {
+			  method: 'POST',
+			  mode: "no-cors",
+			  headers: {
+				//'content-type': 'multipart/form-data',
+			  },
+			  body: form
+			})
+			.then(response => {
+			console.log(response)
+			return response.blob();
+			})
+			.catch(error => console.error('Error:', error))
+			.then(response => console.log('Success:', JSON.stringify(response)));
+		}, 'image/png');
+	}, 70000) // 1m0s
+};
+*/
 </script>
 </body>
 </html>
