@@ -98,15 +98,15 @@ const processResult = (result) => {
 	let hoverData = false;
 	
 	img.onclick = () => {
-		const loggerDetails = document.createElement('div');
-		loggerDetails.innerText = clickData;
-		logger.appendChild(loggerDetails);
-		
 		const {
 			x,
 			y,
 			claimData,
 		} = hoverData;
+
+		const loggerDetails = document.createElement('div');
+		loggerDetails.innerHTML = `<a href="https://open.lbry.com/pixelboard-${x}x${y}">${clickData}</a>`;
+		logger.appendChild(loggerDetails);
 		
 		ctx.fillStyle = '#ddd';
 		ctx.fillRect(x * hardScale, y * hardScale, 1 * hardScale, 1 * hardScale);
